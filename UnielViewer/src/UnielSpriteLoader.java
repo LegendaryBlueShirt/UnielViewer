@@ -1,3 +1,4 @@
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
@@ -158,15 +159,21 @@ public class UnielSpriteLoader implements SpriteSource {
         int destWidth = tiledSprite.data[1];
         int destHeight = tiledSprite.data[2];
         
-        byte[] canvas = new byte[destWidth * destHeight];
+        int xDisplace = tiledSprite.data[4];
+        int yDisplace = tiledSprite.data[5];
+        
+        int realWidth = tiledSprite.data[6] - tiledSprite.data[4];
+        int realHeight = tiledSprite.data[7] - tiledSprite.data[5];
+        
+        byte[] canvas = new byte[realWidth * realHeight];
         
         for(SpriteTile tile: tiledSprite.tiles) {
         	tileBuffer = new byte[32*tile.height];
         	data.get(tileBuffer);
             for(int y = 0;y < tile.height;y++) {
-                if((tile.dstY + y) >= destHeight)
+                if((tile.dstY - yDisplace + y) >= realHeight)
                     break;
-                System.arraycopy(tileBuffer, y*32, canvas, tile.dstX + (tile.dstY + y)*destWidth, 32);
+                System.arraycopy(tileBuffer, y*32, canvas, tile.dstX - xDisplace + (tile.dstY - yDisplace + y)*realWidth, 32);
                 /*for (int x = 0; x < tile.width; x++) {
                     if((tile.dstX + x) >= destWidth)
                         break;
@@ -175,16 +182,26 @@ public class UnielSpriteLoader implements SpriteSource {
             }
         }
         
-		return new DataBufferByte(canvas, destWidth*destHeight); 
+		return new DataBufferByte(canvas, realWidth*realHeight); 
 	}
 	
 	public BufferedImage getSprite(int index) {
 		TiledSprite tiledSprite = spriteMetaData.get(index);
-		int destWidth = tiledSprite.data[1];
-        int destHeight = tiledSprite.data[2];
+		//int destWidth = tiledSprite.data[1];
+        //int destHeight = tiledSprite.data[2];
+		int realWidth = tiledSprite.data[6] - tiledSprite.data[4];
+        int realHeight = tiledSprite.data[7] - tiledSprite.data[5];
+        
 		DataBuffer db = sprites.get(index);
-		WritableRaster wraster = Raster.createWritableRaster(palettes[selectedPalette].createCompatibleSampleModel(destWidth,destHeight), db, null);
+		WritableRaster wraster = Raster.createWritableRaster(palettes[selectedPalette].createCompatibleSampleModel(realWidth,realHeight), db, null);
 		return new BufferedImage(palettes[selectedPalette], wraster, false, null);
+	}
+	
+	public Point getAxisCorrection(int index) {
+		TiledSprite tiledSprite = spriteMetaData.get(index);
+		int originX = tiledSprite.data[4];
+        int originY = tiledSprite.data[5];
+        return new Point(originX, originY);
 	}
 	
 	/*public void saveSprite(int index, OutputStream out) throws IOException {

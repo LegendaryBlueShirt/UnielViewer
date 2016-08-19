@@ -1,6 +1,7 @@
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -69,7 +70,8 @@ public class ViewerWindow extends Canvas implements WindowListener {
                 case 0:
 	                if (gx.sprNo >= 0 && gx.sprNo < source.getNumSprites()) {
 	                    layers[n] = source.getSprite(gx.sprNo);
-	                    canvas.drawImage(layers[n], -128,-224, null);
+	                    Point correction = source.getAxisCorrection(gx.sprNo);
+	                    canvas.drawImage(layers[n], correction.x-128,correction.y-224, null);
 	                }
                     break;
                 case 1:
