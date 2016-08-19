@@ -55,13 +55,12 @@ public class ViewerWindow extends Canvas implements WindowListener {
 			return;
 		if(!frame.AF.mActive)
 			return;
+		synchronized(frame) {
 		g.translate(currentX, currentY);
-		
 		for(int n = 0; n < 3;n++){
 			Graphics2D canvas = (Graphics2D)g.create();
 			Hantei6DataFile.Gx gx = frame.AF.subSprites[n];
 			canvas.translate(gx.mOffsetX, gx.mOffsetY);
-
             if(gx.mHasZoom) {
                 canvas.scale(gx.mZoomX,gx.mZoomY);
             }
@@ -70,8 +69,8 @@ public class ViewerWindow extends Canvas implements WindowListener {
                 case 0:
 	                if (gx.sprNo >= 0 && gx.sprNo < source.getNumSprites()) {
 	                    layers[n] = source.getSprite(gx.sprNo);
-	                    Point correction = source.getAxisCorrection(gx.sprNo);
-	                    canvas.drawImage(layers[n], correction.x-128,correction.y-224, null);
+	                    int[] correction = source.getAxisCorrection(gx.sprNo);
+	                    canvas.drawImage(layers[n], correction[0]-128,correction[1]-224, null);
 	                }
                     break;
                 case 1:
@@ -100,6 +99,7 @@ public class ViewerWindow extends Canvas implements WindowListener {
             }
 
 			canvas.dispose();
+		}
 		}
 		g.setColor(new Color(0x600000FF));
 		for(int n = 0;n < 25;n++){

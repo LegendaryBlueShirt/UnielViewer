@@ -197,11 +197,11 @@ public class UnielSpriteLoader implements SpriteSource {
 		return new BufferedImage(palettes[selectedPalette], wraster, false, null);
 	}
 	
-	public Point getAxisCorrection(int index) {
+	public int[] getAxisCorrection(int index) {
 		TiledSprite tiledSprite = spriteMetaData.get(index);
 		int originX = tiledSprite.data[4];
         int originY = tiledSprite.data[5];
-        return new Point(originX, originY);
+        return new int[]{originX, originY};
 	}
 	
 	/*public void saveSprite(int index, OutputStream out) throws IOException {

@@ -33,7 +33,7 @@ public class UnielViewer {
 		dataFile = new Hantei6DataFile(ByteBuffer.wrap(dataBytes));
 		spriteSource = spriteLoader;
 		
-		sequenceSelect.removeAll();
+		sequenceSelect.removeAllItems();
 		for(Entry<Integer, Hantei6DataFile.Sequence> sequence: dataFile.mSequences.entrySet()) {
 			sequenceSelect.addItem(sequence.getValue());
 		}
@@ -44,7 +44,6 @@ public class UnielViewer {
 	
 		@Override
 		public void keyPressed(KeyEvent arg0) {
-		    System.out.println(arg0.getKeyChar());
 		    int currentIndex = sequenceSelect.getSelectedIndex();
 		    switch(arg0.getKeyCode()) {
 			    case KeyEvent.VK_UP:
@@ -92,7 +91,7 @@ public class UnielViewer {
 	
 	static int currentFrame = 0;
 	//static int currentSequence = 0;
-	static Hantei6DataFile.Sequence sequenceData;
+	static volatile Hantei6DataFile.Sequence sequenceData;
 	static JMenuBar menu;
 	static List<UnielCharacter> characters;
 	static JComboBox<Hantei6DataFile.Sequence> sequenceSelect;
