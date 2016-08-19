@@ -65,12 +65,16 @@ public class UnielViewer {
 			    case KeyEvent.VK_LEFT:
 			    	if(currentFrame > 0)
 			    		currentFrame--;
-			    	
+			    	animating = false;
 			    	break;
 			    case KeyEvent.VK_RIGHT:
 			    	if((currentFrame+1) < sequenceData.frames.length) {
 			    		currentFrame++;
 			    	}
+			    	animating = false;
+			    	break;
+			    case KeyEvent.VK_SPACE:
+			    	animating = !animating;
 			    	break;
 			    default:
 		    }
@@ -90,6 +94,8 @@ public class UnielViewer {
 	};
 	
 	static int currentFrame = 0;
+	static boolean animating = false;
+	static int sequenceTime = 0;
 	//static int currentSequence = 0;
 	static volatile Hantei6DataFile.Sequence sequenceData;
 	static JMenuBar menu;
@@ -124,6 +130,7 @@ public class UnielViewer {
 					return;
 				sequenceData = (Hantei6DataFile.Sequence) arg0.getItem();
 				currentFrame = 0;
+				sequenceTime = 0;
 			}});
 		menu.add(sequenceSelect);
 	}
@@ -166,10 +173,17 @@ public class UnielViewer {
 		int framecount = 0;
 		int framesSkipped = 0;
 		boolean skipFrame = false;
+		Hantei6DataFile.Frame frame;
 		while(view.running) {
 			framecount++;
+			if(animating) {
+				sequenceTime++;
+				currentFrame = AnimHelper.getFrameForTime(sequenceData, sequenceTime);
+			}
+			
+			frame = sequenceData.frames[currentFrame];
 			lastFrameNanos = System.nanoTime();
-			Hantei6DataFile.Frame frame = sequenceData.frames[currentFrame];
+			
 			view.setFrame(frame);
 			
 			if(!skipFrame) {
