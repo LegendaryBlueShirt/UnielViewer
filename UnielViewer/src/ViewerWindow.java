@@ -1,7 +1,6 @@
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -10,7 +9,8 @@ import java.awt.image.BufferedImage;
 
 public class ViewerWindow extends Canvas implements WindowListener {
 	SpriteSource source;
-	Hantei6DataFile.Frame frame;
+	Hantei6DataFile.Sequence sequence;
+	int currentFrame = 0;
 	BufferStrategy strategy;
 	int currentX = 400;
 	int currentY = 450;
@@ -40,22 +40,45 @@ public class ViewerWindow extends Canvas implements WindowListener {
 		g.setColor(background);
 		g.fillRect(0,0,800,600);
 
-		renderFrame(g);
+		renderFrame((Graphics2D) g.create());
+		renderData((Graphics2D) g.create());
 		// finally, we've completed drawing so clear up the graphics
 		// and flip the buffer over
 		g.dispose();
 		strategy.show();
 	}
 	
+	private void renderData(Graphics2D g) {
+		g.setColor(new Color(0xFFFFFFFF));
+		g.translate(16, 16);
+		Hantei6DataFile.Frame frame = sequence.frames[currentFrame];
+		if(frame == null)
+			return;
+		g.drawString(String.format("Sequence %d/%d", currentFrame+1, sequence.frames.length), 0, 0);
+		g.drawString(String.format("Frame %d    Duration %d", AnimHelper.getTimeForFrame(sequence, currentFrame), frame.AF.mDuration), 0, 16);
+		
+		if(frame.AT != null)
+		if(frame.AT.mActive) {
+			g.drawString(String.format("Damage %d", frame.AT.mDamage), 0, 48);
+			//g.drawString(String.format("RedDamage %d", frame.AT.mRedDamage), 0, 64);
+			//g.drawString(String.format("Proration %d", frame.AT.mProration), 0, 80);
+			g.drawString(String.format("Circuit Gain %f", frame.AT.mCircuitGain/100.0), 0, 96);
+		}
+		
+		g.dispose();
+	}
+	
 	BufferedImage[] layers = new BufferedImage[3];
 	private void renderFrame(Graphics2D g) {
 		if(source == null)
 			return;
-		if(frame == null)
+		if(sequence == null)
 			return;
+		Hantei6DataFile.Frame frame = sequence.frames[currentFrame];
+		
 		if(!frame.AF.mActive)
 			return;
-		synchronized(frame) {
+		synchronized(sequence) {
 		g.translate(currentX, currentY);
 		for(int n = 0; n < 3;n++){
 			Graphics2D canvas = (Graphics2D)g.create();
@@ -113,11 +136,13 @@ public class ViewerWindow extends Canvas implements WindowListener {
 			if(box != null)
 				g.drawRect(box.x, box.y, box.width, box.height);
 		}
+		g.dispose();
 	}
 
 	
-	public void setFrame(Hantei6DataFile.Frame frame) {
-		this.frame = frame;
+	public void setFrame(Hantei6DataFile.Sequence sequence, int currentFrame) {
+		this.sequence = sequence;
+		this.currentFrame = currentFrame;
 	}
 	
 	@Override

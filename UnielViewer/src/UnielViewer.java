@@ -173,7 +173,6 @@ public class UnielViewer {
 		int framecount = 0;
 		int framesSkipped = 0;
 		boolean skipFrame = false;
-		Hantei6DataFile.Frame frame;
 		while(view.running) {
 			framecount++;
 			if(animating) {
@@ -181,10 +180,9 @@ public class UnielViewer {
 				currentFrame = AnimHelper.getFrameForTime(sequenceData, sequenceTime);
 			}
 			
-			frame = sequenceData.frames[currentFrame];
 			lastFrameNanos = System.nanoTime();
 			
-			view.setFrame(frame);
+			view.setFrame(sequenceData,currentFrame);
 			
 			if(!skipFrame) {
 				view.render();

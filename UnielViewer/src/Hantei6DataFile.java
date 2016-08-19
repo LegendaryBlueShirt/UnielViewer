@@ -292,11 +292,30 @@ public class Hantei6DataFile
 				case "ATHS": //Proration
 					at.mProration = readInt(file);
 					break;
-				case "ATVV": //Damage and gain
-					at.mRedDamage = readShort(file);
-					at.mDamage = readShort(file);
-					at.mDamageUnk = readShort(file);
-					at.mCircuitGain = readShort(file);
+				case "ATV2": //Damage and gain
+					//14 ints
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					readInt(file);
+					//at.mRedDamage = readShort(file);
+					//at.mDamageUnk = readShort(file);
+					break;
+				case "ATAT":
+					at.mDamage = readInt(file);
+					break;
+				case "ATCA":
+					at.mCircuitGain = readInt(file);
 					break;
 				case "ATED": //End
 					return;
