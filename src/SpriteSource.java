@@ -1,8 +1,7 @@
-import java.awt.Point;
-import java.awt.image.BufferedImage;
+import javafx.scene.image.Image;
 
 public interface SpriteSource {
-	public BufferedImage getSprite(int index);
+	public Image getSprite(int index);
 	public int getNumSprites();
 	public int[] getAxisCorrection(int index);
 }

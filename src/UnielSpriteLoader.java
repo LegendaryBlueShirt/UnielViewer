@@ -1,14 +1,6 @@
-import java.awt.Point;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
-import java.awt.image.IndexColorModel;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -20,19 +12,130 @@ import ar.com.hjg.pngj.ImageLineInt;
 import ar.com.hjg.pngj.PngWriter;
 import ar.com.hjg.pngj.chunks.PngChunkPLTE;
 import ar.com.hjg.pngj.chunks.PngChunkTRNS;
+import javafx.scene.image.Image;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.WritableImage;
 
 public class UnielSpriteLoader implements SpriteSource {
 	String magic = "BMP Cutter3";
+	String magic2 = "BmpCutBin";
+	
+	private static final int TYPE_STEAM = 0,
+			TYPE_CONSOLE = 1;
 	
 	final static int BYTES_PER_CHUNK = 24;
 	
 	int[] offsets;
 	private List<TiledSprite> spriteMetaData;
-	private List<DataBufferByte> sprites;
-	IndexColorModel[] palettes;
+	private List<byte[]> sprites;
+	int[][] palettes;
 	int selectedPalette = 0;
+	int loadType = -1;
+	boolean needsCgarc = false;
 	
 	public UnielSpriteLoader(ByteBuffer data) {
+		loadType = identifyType(data);
+		switch(loadType) {
+		case TYPE_STEAM:
+			loadForSteam(data);
+			break;
+		case TYPE_CONSOLE:
+			loadForConsole(data);
+			needsCgarc = true;
+			break;
+		default:
+			System.err.println("Dunno what this is.");
+		}
+	}
+	
+	private int identifyType(ByteBuffer data) {
+		data.order(ByteOrder.BIG_ENDIAN);
+		data.position(0);
+		byte[] header = new byte[16];
+		data.get(header);
+		if(new String(header).contains(magic2)) {
+			return TYPE_CONSOLE;
+		}
+		data.order(ByteOrder.LITTLE_ENDIAN);
+		data.position(0);
+		data.get(header);
+		if(new String(header).contains(magic)) {
+			return TYPE_STEAM;
+		}
+		return 0;
+	}
+	
+	private void loadForConsole(ByteBuffer data) {
+		data.order(ByteOrder.BIG_ENDIAN);
+		data.position(0);
+		byte[] header = new byte[16];
+		data.get(header);
+		if(!new String(header).contains(magic2)) {
+			System.out.println("Unknown format!");
+			return;
+		}
+		data.position(20);
+		
+		palettes = new int[8][]; //8 Sample palettes, all of which are the same for some reason.
+		byte[] paldata = new byte[1024];
+        for(int n = 0;n < 8;n++) {
+        		palettes[n] = new int[256];
+            data.get(paldata);
+            
+            for(int m = 0;m < 256;m++) {
+	            	if(paldata[m*4+3] != 0)
+	            		paldata[m*4+3] = (byte) 0xFF;
+	            	palettes[n][m] = ((paldata[m*4+3]&0xFF) << 24) | ((paldata[m*4]&0xFF) << 16) | ((paldata[m*4+1]&0xFF) << 8) | (paldata[m*4+2]&0xFF);
+            }
+            
+            //palettes[n] = new IndexColorModel(8,256,paldata,0,true,0);
+        }
+        
+        	data.position(8224);
+		
+		int nSprites = data.getInt();
+		data.position(8260);
+		offsets = new int[nSprites];
+		for(int n = 0;n < nSprites;n++) {
+			offsets[n] = data.getInt();
+		}
+		data.position(20260);
+		int TTOffset = data.getInt();
+		data.getInt();
+		int fsize = data.getInt();
+		
+		if(data.limit() != fsize) {
+			System.out.println("Filesize mismatch!");
+			return;
+		}
+		
+		byte[] buffer = new byte[32];
+        int[] dataBuffer = new int[8];
+        spriteMetaData = new ArrayList<TiledSprite>();
+        sprites = new ArrayList<byte[]>();
+        for(int n = 0;n < nSprites;n++) {
+            data.position(offsets[n]);
+            data.get(buffer);
+            String name = new String(buffer).trim();
+            for(int m = 0;m < 8;m++) {
+                dataBuffer[m] = data.getInt();
+            }
+            int chunkOffset = data.getInt();
+            int nChunks = data.getShort()&0xFFFF;
+            TiledSprite newSprite = new TiledSprite(name, Arrays.copyOf(dataBuffer,dataBuffer.length), nChunks);
+
+            data.position(TTOffset + BYTES_PER_CHUNK * chunkOffset);
+            for(int m = 0;m < nChunks;m++) {
+                newSprite.tiles[m] = new SpriteTile(
+                		data.getInt(),data.getInt(),data.getInt(),data.getInt(),
+                        data.getShort(),data.getShort(),data.getShort(),data.getShort());
+            }
+            
+            spriteMetaData.add(newSprite);
+        }
+	}
+	
+	private void loadForSteam(ByteBuffer data) {
 		data.order(ByteOrder.LITTLE_ENDIAN);
 		data.position(0);
 		byte[] header = new byte[16];
@@ -43,17 +146,19 @@ public class UnielSpriteLoader implements SpriteSource {
 		}
 		data.position(20);
 		
-		palettes = new IndexColorModel[8]; //8 Sample palettes, all of which are the same for some reason.
+		palettes = new int[8][]; //8 Sample palettes, all of which are the same for some reason.
 		byte[] paldata = new byte[1024];
         for(int n = 0;n < 8;n++) {
+        		palettes[n] = new int[256];
             data.get(paldata);
             
             for(int m = 0;m < 256;m++) {
-            	if(paldata[m*4+3] != 0)
-            		paldata[m*4+3] = (byte) 0xFF;
+	            	if(paldata[m*4+3] != 0)
+	            		paldata[m*4+3] = (byte) 0xFF;
+	            	palettes[n][m] = ((paldata[m*4+3]&0xFF) << 24) | ((paldata[m*4]&0xFF) << 16) | ((paldata[m*4+1]&0xFF) << 8) | (paldata[m*4+2]&0xFF);
             }
             
-            palettes[n] = new IndexColorModel(8,256,paldata,0,true,0);
+            //palettes[n] = new IndexColorModel(8,256,paldata,0,true,0);
         }
 		
 		data.position(8224);
@@ -77,7 +182,7 @@ public class UnielSpriteLoader implements SpriteSource {
 		byte[] buffer = new byte[32];
         int[] dataBuffer = new int[8];
         spriteMetaData = new ArrayList<TiledSprite>();
-        sprites = new ArrayList<DataBufferByte>();
+        sprites = new ArrayList<byte[]>();
         for(int n = 0;n < nSprites;n++) {
             data.position(offsets[n]);
             data.get(buffer);
@@ -102,22 +207,72 @@ public class UnielSpriteLoader implements SpriteSource {
         }
 	}
 	
-	public void loadPalettes(ByteBuffer data) {
-		data.order(ByteOrder.LITTLE_ENDIAN);
+	public void loadSheets(ByteBuffer data) {
+		if(!needsCgarc) {
+			System.err.println("LoadSheets called erroneously!");
+			return;
+		}
+		UkArc arc = new UkArc(data);
 		
+		for(TiledSprite spriteData: spriteMetaData) {
+			sprites.add(makeSprite(arc, spriteData));
+		}
+	}
+	
+	public void loadPalettes(ByteBuffer data) {
+		switch(loadType) {
+		case TYPE_STEAM:
+			loadSteamPalettes(data);
+			break;
+		case TYPE_CONSOLE:
+			loadConsolePalettes(data);
+			break;
+			default:
+		}
+	}
+	
+	public void loadConsolePalettes(ByteBuffer data) {
+		data.order(ByteOrder.LITTLE_ENDIAN);
+		data.getInt();
+		data.getInt();
+		data.getInt();
 		int nPalettes = data.getInt();
 		
-		palettes = new IndexColorModel[nPalettes];
+		palettes = new int[nPalettes][];
 		byte[] paldata = new byte[1024];
         for(int n = 0;n < nPalettes;n++) {
+        		palettes[n] = new int[256];
             data.get(paldata);
             
             for(int m = 0;m < 256;m++) {
-            	if(paldata[m*4+3] != 0)
-            		paldata[m*4+3] = (byte) 0xFF;
+            		if(paldata[m*4+3] != 0)
+            			paldata[m*4+3] = (byte) 0xFF;
+            		if(m == 0)
+            			paldata[3] = 0;
+            		palettes[n][m] = ((paldata[m*4+3]&0xFF) << 24) | ((paldata[m*4]&0xFF) << 16) | ((paldata[m*4+1]&0xFF) << 8) | (paldata[m*4+2]&0xFF);
             }
             
-            palettes[n] = new IndexColorModel(8,256,paldata,0,true,0);
+            //palettes[n] = new IndexColorModel(8,256,paldata,0,true,0);
+        }
+	}
+	
+	public void loadSteamPalettes(ByteBuffer data) {
+		data.order(ByteOrder.LITTLE_ENDIAN);
+		int nPalettes = data.getInt();
+		
+		palettes = new int[nPalettes][];
+		byte[] paldata = new byte[1024];
+        for(int n = 0;n < nPalettes;n++) {
+        		palettes[n] = new int[256];
+            data.get(paldata);
+            
+            for(int m = 0;m < 256;m++) {
+            		if(paldata[m*4+3] != 0)
+            			paldata[m*4+3] = (byte) 0xFF;
+            		palettes[n][m] = ((paldata[m*4+3]&0xFF) << 24) | ((paldata[m*4]&0xFF) << 16) | ((paldata[m*4+1]&0xFF) << 8) | (paldata[m*4+2]&0xFF);
+            }
+            
+            //palettes[n] = new IndexColorModel(8,256,paldata,0,true,0);
         }
 	}
 	
@@ -155,7 +310,38 @@ public class UnielSpriteLoader implements SpriteSource {
 	
 	byte[] tileBuffer;
 	
-	public DataBufferByte makeSprite(ByteBuffer data, final TiledSprite tiledSprite) {
+	public byte[] makeSprite(UkArc data, final TiledSprite tiledSprite) {
+        int destWidth = tiledSprite.data[1];
+        int destHeight = tiledSprite.data[2];
+        
+        int xDisplace = tiledSprite.data[4];
+        int yDisplace = tiledSprite.data[5];
+        
+        int realWidth = tiledSprite.data[6] - tiledSprite.data[4];
+        int realHeight = tiledSprite.data[7] - tiledSprite.data[5];
+        
+        DDSFile sheet = DDSHelper.parse(GzipHelper.inflate(data.getFile(tiledSprite.name+".gz")));
+        //System.out.println("Source Sheet Dim = "+sheet.getWidth()+"x"+sheet.getHeight());
+        
+        byte[] canvas = new byte[realWidth * realHeight];
+        //System.out.println("Allocation = "+destWidth+"x"+destHeight);
+        //System.out.println("Destination Dim = "+realWidth+"x"+realHeight);
+        //System.out.println("Displacement = "+xDisplace+","+yDisplace);
+        for(SpriteTile tile: tiledSprite.tiles) {
+        		//System.out.println("Current Tile - "+tile.srcX+", "+tile.srcY);
+        		//System.out.println("Current Tile Dim - "+tile.width+"x"+tile.height);
+        		//System.out.println("Current Tile Dest - "+tile.dstX+", "+tile.dstY);
+            for(int y = 0;y < tile.height;y++) {
+                if((tile.dstY - yDisplace + y) >= realHeight)
+                    break;
+                System.arraycopy(sheet.getData(), tile.srcX + (tile.srcY + y)*sheet.getWidth(), canvas, tile.dstX - xDisplace + (tile.dstY - yDisplace + y)*realWidth, tile.width);
+            }
+        }
+        
+		return canvas;
+	}
+	
+	public byte[] makeSprite(ByteBuffer data, final TiledSprite tiledSprite) {
         int destWidth = tiledSprite.data[1];
         int destHeight = tiledSprite.data[2];
         
@@ -182,19 +368,22 @@ public class UnielSpriteLoader implements SpriteSource {
             }
         }
         
-		return new DataBufferByte(canvas, realWidth*realHeight); 
+		return canvas;
 	}
 	
-	public BufferedImage getSprite(int index) {
+	public Image getSprite(int index) {
 		TiledSprite tiledSprite = spriteMetaData.get(index);
 		//int destWidth = tiledSprite.data[1];
         //int destHeight = tiledSprite.data[2];
 		int realWidth = tiledSprite.data[6] - tiledSprite.data[4];
         int realHeight = tiledSprite.data[7] - tiledSprite.data[5];
         
-		DataBuffer db = sprites.get(index);
-		WritableRaster wraster = Raster.createWritableRaster(palettes[selectedPalette].createCompatibleSampleModel(realWidth,realHeight), db, null);
-		return new BufferedImage(palettes[selectedPalette], wraster, false, null);
+		//DataBuffer db = sprites.get(index);
+		//WritableRaster wraster = Raster.createWritableRaster(palettes[selectedPalette].createCompatibleSampleModel(realWidth,realHeight), db, null);
+		//return new BufferedImage(palettes[selectedPalette], wraster, false, null);
+        WritableImage img = new WritableImage(realWidth, realHeight);
+        img.getPixelWriter().setPixels(0, 0, realWidth, realHeight, PixelFormat.createByteIndexedInstance(palettes[selectedPalette]), sprites.get(index), 0, realWidth);
+        return img;
 	}
 	
 	public int[] getAxisCorrection(int index) {

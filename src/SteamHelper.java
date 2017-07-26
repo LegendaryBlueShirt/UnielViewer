@@ -5,8 +5,13 @@ import java.io.StringWriter;
 
 public class SteamHelper {
 	public static File getUNIELDirectory() {
-		File steamDirectory = new File(getSteamDirectory());
-		return new File(steamDirectory,"SteamApps/common/UNDER NIGHT IN-BIRTH Exe Late");
+		String steamDirectory = getSteamDirectory();
+		if(steamDirectory != null) {
+			File steamDirFile = new File(getSteamDirectory());
+			return new File(steamDirFile,"SteamApps/common/UNDER NIGHT IN-BIRTH Exe Late");
+		} else {
+			return null;
+		}
 	}
 	
 	public static String getSteamDirectory() {

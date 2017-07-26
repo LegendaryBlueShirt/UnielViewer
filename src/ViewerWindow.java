@@ -1,22 +1,22 @@
-import java.awt.Canvas;
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.awt.image.BufferStrategy;
-import java.awt.image.BufferedImage;
 
-public class ViewerWindow extends Canvas implements WindowListener {
+import javafx.event.EventHandler;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
+import javafx.stage.WindowEvent;
+
+public class ViewerWindow extends Canvas {
 	SpriteSource source;
 	Hantei6DataFile.Sequence sequence;
 	int currentFrame = 0;
-	BufferStrategy strategy;
+	//BufferStrategy strategy;
 	int currentX = 400;
 	int currentY = 450;
 	
-	public ViewerWindow() {
-		
+	public ViewerWindow(int width, int height) {
+		super(width, height);
 	}
 	
 	public void setSpriteSource(SpriteSource source) {
@@ -24,52 +24,59 @@ public class ViewerWindow extends Canvas implements WindowListener {
 	}
 	
 	volatile boolean running = false;
-	Color background = Color.black;
+	Color background = Color.BLACK;
 	long lastLoopTime;
 	public void prepareForRendering() {
-		setIgnoreRepaint(true);
-		createBufferStrategy(2);
-		strategy = getBufferStrategy();
+		//setIgnoreRepaint(true);
+		//createBufferStrategy(2);
+		//strategy = getBufferStrategy();
 		running = true;
 	}
 	
 	public void render() {
 		// Get hold of a graphics context for the accelerated 
 		// surface and blank it out
-		Graphics2D g = (Graphics2D) strategy.getDrawGraphics();
-		g.setColor(background);
-		g.fillRect(0,0,800,600);
+		//Graphics2D g = (Graphics2D) strategy.getDrawGraphics();
+		GraphicsContext g = getGraphicsContext2D();
+		g.setFill(background);
+		g.fillRect(0,0,getWidth(),getHeight());
 
-		renderFrame((Graphics2D) g.create());
-		renderData((Graphics2D) g.create());
+		//renderFrame((Graphics2D) g.create());
+		//renderData((Graphics2D) g.create());
+		renderFrame(g);
+		renderData(g);
 		// finally, we've completed drawing so clear up the graphics
 		// and flip the buffer over
-		g.dispose();
-		strategy.show();
+		//g.dispose();
+		//strategy.show();
 	}
 	
-	private void renderData(Graphics2D g) {
-		g.setColor(new Color(0xFFFFFFFF));
+	private void renderData(GraphicsContext g) {
+		g.save();
+		if(sequence == null)
+			return;
+		g.setFill(new Color(1,1,1,1));
 		g.translate(16, 16);
 		Hantei6DataFile.Frame frame = sequence.frames[currentFrame];
 		if(frame == null)
 			return;
-		g.drawString(String.format("Sequence %d/%d", currentFrame+1, sequence.frames.length), 0, 0);
-		g.drawString(String.format("Frame %d    Duration %d", AnimHelper.getTimeForFrame(sequence, currentFrame), frame.AF.mDuration), 0, 16);
+		g.fillText(String.format("Sequence %d/%d", currentFrame+1, sequence.frames.length), 0, 0);
+		g.fillText(String.format("Frame %d    Duration %d", AnimHelper.getTimeForFrame(sequence, currentFrame), frame.AF.mDuration), 0, 16);
 		
 		if(frame.AT != null)
 		if(frame.AT.mActive) {
-			g.drawString(String.format("Damage %d", frame.AT.mDamage), 0, 48);
+			g.fillText(String.format("Damage %d", frame.AT.mDamage), 0, 48);
 			//g.drawString(String.format("RedDamage %d", frame.AT.mRedDamage), 0, 64);
 			//g.drawString(String.format("Proration %d", frame.AT.mProration), 0, 80);
-			g.drawString(String.format("Circuit Gain %f", frame.AT.mCircuitGain/100.0), 0, 96);
+			g.fillText(String.format("Circuit Gain %f", frame.AT.mCircuitGain/100.0), 0, 96);
 		}
-		
-		g.dispose();
+		g.restore();
+		//g.dispose();
 	}
 	
-	BufferedImage[] layers = new BufferedImage[3];
-	private void renderFrame(Graphics2D g) {
+	Image[] layers = new Image[3];
+	private void renderFrame(GraphicsContext g) {
+		g.save();
 		if(source == null)
 			return;
 		if(sequence == null)
@@ -81,11 +88,11 @@ public class ViewerWindow extends Canvas implements WindowListener {
 		synchronized(sequence) {
 		g.translate(currentX, currentY);
 		for(int n = 0; n < 3;n++){
-			Graphics2D canvas = (Graphics2D)g.create();
+			g.save();
 			Hantei6DataFile.Gx gx = frame.AF.subSprites[n];
-			canvas.translate(gx.mOffsetX, gx.mOffsetY);
+			g.translate(gx.mOffsetX, gx.mOffsetY);
             if(gx.mHasZoom) {
-                canvas.scale(gx.mZoomX,gx.mZoomY);
+                g.scale(gx.mZoomX,gx.mZoomY);
             }
             
             switch(gx.unk) {
@@ -93,7 +100,7 @@ public class ViewerWindow extends Canvas implements WindowListener {
 	                if (gx.sprNo >= 0 && gx.sprNo < source.getNumSprites()) {
 	                    layers[n] = source.getSprite(gx.sprNo);
 	                    int[] correction = source.getAxisCorrection(gx.sprNo);
-	                    canvas.drawImage(layers[n], correction[0]-128,correction[1]-224, null);
+	                    g.drawImage(layers[n], correction[0]-128,correction[1]-224);
 	                }
                     break;
                 case 1:
@@ -121,22 +128,24 @@ public class ViewerWindow extends Canvas implements WindowListener {
                 default:
             }
 
-			canvas.dispose();
+			g.restore();
 		}
 		}
-		g.setColor(new Color(0x600000FF));
+		g.setStroke(new Color(0,0,1,.38));
 		for(int n = 0;n < 25;n++){
 			Rectangle box = frame.mHitboxes[n];
-			if(box != null)
-				g.drawRect(box.x, box.y, box.width, box.height);
+			if(box != null) {
+				g.strokeRect(box.x, box.y, box.width, box.height);
+			}
 		}
-		g.setColor(new Color(0x60FF0000));
+		g.setStroke(new Color(1,0,0,.38));
 		for(int n = 25;n < 33;n++){
 			Rectangle box = frame.mHitboxes[n];
-			if(box != null)
-				g.drawRect(box.x, box.y, box.width, box.height);
+			if(box != null) {
+				g.strokeRect(box.x, box.y, box.width, box.height);
+			}
 		}
-		g.dispose();
+		g.restore();
 	}
 
 	
@@ -145,51 +154,19 @@ public class ViewerWindow extends Canvas implements WindowListener {
 		this.currentFrame = currentFrame;
 	}
 	
-	@Override
-	public void windowActivated(WindowEvent e) {
-		// TODO Auto-generated method stub
-		
+	public EventHandler<WindowEvent> getWindowCloseHandler() {
+		return new EventHandler<WindowEvent>() {
+			@Override
+			public void handle(WindowEvent event) {
+				running = false;
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				//e.getWindow().dispose();
+			}
+			};
 	}
-
-	@Override
-	public void windowClosed(WindowEvent e) {
-		
-	}
-
-	@Override
-	public void windowClosing(WindowEvent e) {
-		running = false;
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		e.getWindow().dispose();
-	}
-
-	@Override
-	public void windowDeactivated(WindowEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void windowDeiconified(WindowEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void windowIconified(WindowEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void windowOpened(WindowEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
 }

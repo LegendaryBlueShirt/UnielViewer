@@ -11,6 +11,13 @@ public class UnielCharacterImpl implements UnielCharacter {
             "Akatsuki", "Byakuya", "Carmine", "Chaos", "Eltnum", "Gordeau", "Hilda", "Hyde", "Linne", "Merkava", "Nanase", "Orie", "Seth", "Vatista", "Waldstein", "Yuzuriha"
     };
 	
+	public static final String[] stnames = new String[] {
+            "Enk", "Mik", "Pho", "Wag"
+    };
+	public static final String[] stfullnames = new String[] {
+            "Enkidu", "Mika", "Phonon", "Wagner"
+    };
+	
 	public static List<UnielCharacter> getCharacters() {
 		ArrayList<UnielCharacter> characters = new ArrayList<UnielCharacter>();
 		
@@ -21,16 +28,30 @@ public class UnielCharacterImpl implements UnielCharacter {
 		return characters;
 	}
 	
+	public static List<UnielCharacter> getStCharacters() {
+		List<UnielCharacter> characters = getCharacters();
+		
+		for(int n = 0;n < stnames.length;n++) {
+			characters.add(new UnielCharacterImpl(stnames[n],stfullnames[n]));
+		}
+		
+		return characters;
+	}
+	
 	private HashMap<String, File> files;
 	private final String fullname;
 	
 	public UnielCharacterImpl(String tag, String fullname) {
-		File baseDir = new File(SteamHelper.getUNIELDirectory(), String.format("data/%s_0", tag));
+		File baseDir = new File(String.format("data/%s_0", tag));
+		File packDir = new File("PackFile/data");
 		this.fullname = fullname;
 		
 		files = new HashMap<String, File>();
+		files.put(PACKFILE, new File(baseDir, String.format("%s.pac", tag)));
+		files.put(PACKFILE_COMPRESSED, new File(packDir, String.format("%s.pac.gz", tag)));
 		files.put(FILE_DATA, new File(baseDir, String.format("%s.HA6", tag)));
 		files.put(FILE_SPRITES, new File(baseDir, String.format("%s.cg", tag)));
+		files.put(FILE_SPRITES_CG, new File(baseDir, "cgarc.uka"));
 		files.put(FILE_PALETTE, new File(baseDir, String.format("%s.pal", tag)));
 		if(tag.equals("Gor"))
 			files.put(FILE_EFFECT, new File(baseDir, String.format("%s_ef.pat", tag)));
