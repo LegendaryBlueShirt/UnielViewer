@@ -240,7 +240,7 @@ public class UnielViewer extends Application {
 	}
 	
 	
-	static LoadDialog loadDialog = new LoadDialog();
+	static LoadDialog loadDialog;
 	private void showDirectoryChooser() {
 		/*unielHome = new File("/Users/franciscopareja/Downloads/UNIST/USRDIR/");
 		try {
@@ -252,6 +252,9 @@ public class UnielViewer extends Application {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
+		if(loadDialog == null) {
+			loadDialog = new LoadDialog();
+		}
 		Optional<ButtonType> result = loadDialog.showAndWait();
 		if(result.get() == ButtonType.OK) {
 			unielHome = loadDialog.getFolder();

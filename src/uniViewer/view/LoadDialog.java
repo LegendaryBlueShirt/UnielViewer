@@ -61,7 +61,7 @@ public class LoadDialog extends Dialog<ButtonType> {
     }
 	
 	public LoadDialog() {
-		//super();
+		super();
 		
 		setTitle("Loading Options");
 		setResult(ButtonType.CANCEL);
