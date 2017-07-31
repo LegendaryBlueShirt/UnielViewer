@@ -67,7 +67,7 @@ public class LoadDialog extends Dialog<ButtonType> {
 		setResult(ButtonType.CANCEL);
 		
 		try {
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("LoadDialog.fxml"));
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/LoadDialog.fxml"));
 			loader.setController(this);
 			Parent root = loader.load();
 			//Parent root = FXMLLoader.load(getClass().getResource("LoadDialog.fxml"));

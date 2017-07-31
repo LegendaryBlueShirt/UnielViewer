@@ -2,6 +2,7 @@ package uniViewer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,7 @@ public class UnielViewer extends Application {
 	static UnPac.PacFile pacFile;
 	static ComboBox<UnielCharacter> characterSelect;
 	
-	private static void setAppMode(AppMode appMode) {
+	private void setAppMode(AppMode appMode) {
 		currentAppMode = appMode;
 		switch(currentAppMode) {
 		case UNIEL_STEAM:
@@ -67,24 +68,21 @@ public class UnielViewer extends Application {
 		characterSelect.getSelectionModel().select(0);
 	}
 	
-	private static void loadCharacter(UnielCharacter character) {
+	private void loadCharacter(UnielCharacter character) {
 		if(unielHome == null)
 			return;
 		
 		File namesFile = character.getFile(UnielCharacter.ANIM_NAME_OVERRIDE);
-		if(namesFile.exists()) {
-			try {
-				FileInputStream fis = new FileInputStream(namesFile);
-				byte[] data = new byte[(int) namesFile.length()];
-				fis.read(data);
-				fis.close();
-	
-				String str = new String(data, "UTF-8");
-				NameOverride.setOverrideData(str);
-			}catch(Exception e) {
-				NameOverride.setOverrideData("{}");
-			}
-		} else {
+		try {
+			InputStream is = getClass().getResourceAsStream(File.separator+namesFile.getName());
+			byte[] data = new byte[is.available()];
+			is.read(data);
+			is.close();
+
+			String str = new String(data, "UTF-8");
+			NameOverride.setOverrideData(str);
+		}catch(Exception e) {
+			e.printStackTrace();
 			NameOverride.setOverrideData("{}");
 		}
 		
@@ -113,7 +111,7 @@ public class UnielViewer extends Application {
 		sequenceSelect.getSelectionModel().select(0);
 	}
 	
-	private static void loadCharacterUnist(UnielCharacter character)throws IOException {
+	private void loadCharacterUnist(UnielCharacter character)throws IOException {
 		File packFile = new File(unielHome, character.getFile(UnielCharacter.PACKFILE).getPath());
 		if(!packFile.exists()) {
 			GzipHelper.inflate(new File(unielHome, character.getFile(UnielCharacter.PACKFILE_COMPRESSED).getPath()), packFile);
@@ -130,7 +128,7 @@ public class UnielViewer extends Application {
 		spriteSource = spriteLoader;
 	}
 	
-	public static void loadCharacterUniel(UnielCharacter character)throws IOException {
+	public void loadCharacterUniel(UnielCharacter character)throws IOException {
 		byte[] data;
 		data = UnielDecrypt.decrypt(new File(unielHome, character.getFile(UnielCharacter.FILE_SPRITES).getPath()));
 		UnielSpriteLoader spriteLoader = new UnielSpriteLoader(ByteBuffer.wrap(data));
@@ -195,7 +193,7 @@ public class UnielViewer extends Application {
 	static List<UnielCharacter> characters = new ArrayList<UnielCharacter>();
 	static ComboBox<Hantei6DataFile.Sequence> sequenceSelect;
 	
-	static void createMenu(final ViewerWindow view) {
+	void createMenu(final ViewerWindow view) {
 		menu = new MenuBar();
 		
 		Menu fileMenu = new Menu("File");
@@ -243,7 +241,7 @@ public class UnielViewer extends Application {
 	
 	
 	static LoadDialog loadDialog = new LoadDialog();
-	private static void showDirectoryChooser() {
+	private void showDirectoryChooser() {
 		/*unielHome = new File("/Users/franciscopareja/Downloads/UNIST/USRDIR/");
 		try {
 			start();
@@ -272,7 +270,7 @@ public class UnielViewer extends Application {
 	
 	//static Thread looper;
 	static AnimationTimer looper;
-	public static void start() throws IOException, InterruptedException {
+	public void start() throws IOException, InterruptedException {
 		view.running = false;
 		if(looper != null)
 			looper.stop();
