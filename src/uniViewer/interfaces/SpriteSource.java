@@ -1,3 +1,4 @@
+package uniViewer.interfaces;
 import javafx.scene.image.Image;
 
 public interface SpriteSource {

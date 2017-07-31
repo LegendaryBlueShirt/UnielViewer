@@ -1,7 +1,9 @@
+package uniViewer.model;
 import java.awt.Rectangle;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class Hantei6DataFile
 {
@@ -10,67 +12,73 @@ public class Hantei6DataFile
 	/*
 		Hitbox is 4x shorts */
 		
-	static class FrameAf {
-		Gx[] subSprites = new Gx[3];
-		boolean mActive;
-		int mFrame, mFrameUnk, mDuration, mAff, mBlendMode, mColor;
+	public static class FrameAf {
+		public Gx[] subSprites = new Gx[3];
+		public boolean mActive;
+		public int mFrame, mFrameUnk, mDuration, mAff, mBlendMode, mColor;
 
 	}
 	
-	static class Gx {
-		int id, unk, sprNo;
-		int mOffsetX,mOffsetY;
-        float mRotZ = 0, mRotY = 0, mRotX = 0, mZoomX = 1, mZoomY = 1;
-        boolean mHasZoom = false;
+	public static class Gx {
+		public int id, unk, sprNo, mOffsetX,mOffsetY;
+		public float mRotZ = 0, mRotY = 0, mRotX = 0;
+		public float mZoomX = 1, mZoomY = 1;
+		public boolean mHasZoom = false;
 	}
 	
-	static class FrameAs {
-		int mFlags, mSpeedHorz, mSpeedVert, mAccelHorz, mAccelVert, mStandState, mCancelFlags, ASMV;
+	public static class FrameAs {
+		public int mFlags, mSpeedHorz, mSpeedVert, mAccelHorz, mAccelVert, mStandState, mCancelFlags, ASMV;
 	}
 	
-	static class FrameAt {
-		boolean mActive;
-		int mFlags, mProration, mDamage, mRedDamage, mDamageUnk, mCircuitGain;
+	public static class FrameAt {
+		public boolean mActive;
+		public int mFlags, mProration, mDamage, mRedDamage, mDamageUnk, mCircuitGain;
 	}
 	
-	static class FrameEf {
-		int mCommand, mParameter;
-		int[] mValues = new int[12];
+	public static class FrameEf {
+		public int mCommand, mParameter;
+		public int[] mValues = new int[12];
 	}
 	
-	static class FrameIf {
-		int mCommand;
-		int[] mValues = new int[12];
+	public static class FrameIf {
+		public int mCommand;
+		public int[] mValues = new int[12];
 	}
 	
-	static class Frame {
-		FrameAf AF;
-		FrameAs AS;
-		FrameAt AT;
-		FrameEf EF;
-		FrameIf IF;
-		Rectangle[] mHitboxes = new Rectangle[33];
+	public static class Frame {
+		public FrameAf AF;
+		public FrameAs AS;
+		public FrameAt AT;
+		public FrameEf EF;
+		public FrameIf IF;
+		public Rectangle[] mHitboxes = new Rectangle[33];
 	}
 	
-	static class Sequence {
+	public static class Sequence {
+		private final static String formatString = "%d %s";
 		@Override
 		public String toString() {
-			return mName;
+			String properName = NameOverride.getNameOverride(id);
+			if(properName != null) {
+				return String.format(Locale.US, formatString, id, properName);
+			} else {
+				return String.format(Locale.US, formatString, id, mName);
+			}
 		}
 		
 		String mName, mMoveName;
 		boolean mIsMove, mIsInitialized;
 		int mMoveMeter, nSubframes, id;
 		
-		Frame[] frames;
-		Rectangle[] hitboxes;
-		FrameAt[] frameAts;
-		FrameAs[] frameAss;
-		FrameEf[] frameEfs;
-		FrameIf[] frameIfs;
+		public Frame[] frames;
+		public Rectangle[] hitboxes;
+		public FrameAt[] frameAts;
+		public FrameAs[] frameAss;
+		public FrameEf[] frameEfs;
+		public FrameIf[] frameIfs;
 	}
 	
-	HashMap<Integer, Sequence> mSequences = new HashMap<Integer, Sequence>();
+	public HashMap<Integer, Sequence> mSequences = new HashMap<Integer, Sequence>();
 	public boolean mInitialized = false;
 
     byte[] stringBuffer = new byte[32];

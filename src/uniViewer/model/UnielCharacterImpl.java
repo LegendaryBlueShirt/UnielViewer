@@ -1,7 +1,10 @@
+package uniViewer.model;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import uniViewer.interfaces.UnielCharacter;
 
 public class UnielCharacterImpl implements UnielCharacter {
 	public static final String[] names = new String[] {
@@ -53,6 +56,7 @@ public class UnielCharacterImpl implements UnielCharacter {
 		files.put(FILE_SPRITES, new File(baseDir, String.format("%s.cg", tag)));
 		files.put(FILE_SPRITES_CG, new File(baseDir, "cgarc.uka"));
 		files.put(FILE_PALETTE, new File(baseDir, String.format("%s.pal", tag)));
+		files.put(ANIM_NAME_OVERRIDE, new File(String.format("%s.json", tag)));
 		if(tag.equals("Gor"))
 			files.put(FILE_EFFECT, new File(baseDir, String.format("%s_ef.pat", tag)));
 		else

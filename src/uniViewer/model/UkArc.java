@@ -1,3 +1,4 @@
+package uniViewer.model;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,8 +10,9 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
-import java.util.Arrays;
 import java.util.HashMap;
+
+import uniViewer.util.GzipHelper;
 
 public class UkArc {
 	private static final String magic = "UKArc";

@@ -1,3 +1,4 @@
+package uniViewer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -5,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
@@ -13,6 +15,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -22,6 +25,18 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import uniViewer.interfaces.SpriteSource;
+import uniViewer.interfaces.UnielCharacter;
+import uniViewer.model.Hantei6DataFile;
+import uniViewer.model.NameOverride;
+import uniViewer.model.UnielCharacterImpl;
+import uniViewer.util.AnimHelper;
+import uniViewer.util.GzipHelper;
+import uniViewer.util.SteamHelper;
+import uniViewer.util.UnPac;
+import uniViewer.util.UnielDecrypt;
+import uniViewer.view.LoadDialog;
+import uniViewer.view.ViewerWindow;
 
 public class UnielViewer extends Application {
 	static AppMode currentAppMode = AppMode.UNIST_PS3;
@@ -40,19 +55,39 @@ public class UnielViewer extends Application {
 		case UNIST_PS3:
 			characters = UnielCharacterImpl.getStCharacters();
 			break;
+		case UNKNOWN:
+			break;
 		}
 		
 		sequenceSelect.getItems().clear();
 		characterSelect.getItems().clear();
 		characterSelect.getItems().addAll(characters);
-		characterSelect.getSelectionModel().select(0);
 		characterSelect.setDisable(true);
 		sequenceSelect.setDisable(true);
+		characterSelect.getSelectionModel().select(0);
 	}
 	
 	private static void loadCharacter(UnielCharacter character) {
 		if(unielHome == null)
 			return;
+		
+		File namesFile = character.getFile(UnielCharacter.ANIM_NAME_OVERRIDE);
+		if(namesFile.exists()) {
+			try {
+				FileInputStream fis = new FileInputStream(namesFile);
+				byte[] data = new byte[(int) namesFile.length()];
+				fis.read(data);
+				fis.close();
+	
+				String str = new String(data, "UTF-8");
+				NameOverride.setOverrideData(str);
+			}catch(Exception e) {
+				NameOverride.setOverrideData("{}");
+			}
+		} else {
+			NameOverride.setOverrideData("{}");
+		}
+		
 		try {
 			switch(currentAppMode) {
 			case UNIEL_STEAM:
@@ -60,6 +95,8 @@ public class UnielViewer extends Application {
 				break;
 			case UNIST_PS3:
 				loadCharacterUnist(character);
+				break;
+			case UNKNOWN:
 				break;
 			}
 		} catch (IOException e) {
@@ -71,10 +108,9 @@ public class UnielViewer extends Application {
 		for(Entry<Integer, Hantei6DataFile.Sequence> sequence: dataFile.mSequences.entrySet()) {
 			sequenceSelect.getItems().add(sequence.getValue());
 		}
-		sequenceSelect.getSelectionModel().select(0);
-		
 		characterSelect.setDisable(false);
 		sequenceSelect.setDisable(false);
+		sequenceSelect.getSelectionModel().select(0);
 	}
 	
 	private static void loadCharacterUnist(UnielCharacter character)throws IOException {
@@ -205,8 +241,10 @@ public class UnielViewer extends Application {
 		sequenceSelect.setDisable(true);
 	}
 	
+	
+	static LoadDialog loadDialog = new LoadDialog();
 	private static void showDirectoryChooser() {
-		unielHome = new File("/Users/franciscopareja/Downloads/UNIST/USRDIR/");
+		/*unielHome = new File("/Users/franciscopareja/Downloads/UNIST/USRDIR/");
 		try {
 			start();
 		} catch (IOException e) {
@@ -215,6 +253,20 @@ public class UnielViewer extends Application {
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}*/
+		Optional<ButtonType> result = loadDialog.showAndWait();
+		if(result.get() == ButtonType.OK) {
+			unielHome = loadDialog.getFolder();
+			setAppMode(loadDialog.getMode());
+			try {
+				start();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	

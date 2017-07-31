@@ -1,3 +1,4 @@
+package uniViewer.view;
 import java.awt.Rectangle;
 
 import javafx.event.EventHandler;
@@ -6,6 +7,9 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.stage.WindowEvent;
+import uniViewer.interfaces.SpriteSource;
+import uniViewer.model.Hantei6DataFile;
+import uniViewer.util.AnimHelper;
 
 public class ViewerWindow extends Canvas {
 	SpriteSource source;
@@ -23,7 +27,7 @@ public class ViewerWindow extends Canvas {
 		this.source = source;
 	}
 	
-	volatile boolean running = false;
+	public volatile boolean running = false;
 	Color background = Color.BLACK;
 	long lastLoopTime;
 	public void prepareForRendering() {

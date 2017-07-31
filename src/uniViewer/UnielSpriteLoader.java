@@ -1,3 +1,10 @@
+package uniViewer;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.IndexColorModel;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -7,14 +14,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import ar.com.hjg.pngj.ImageInfo;
-import ar.com.hjg.pngj.ImageLineInt;
-import ar.com.hjg.pngj.PngWriter;
-import ar.com.hjg.pngj.chunks.PngChunkPLTE;
-import ar.com.hjg.pngj.chunks.PngChunkTRNS;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
+import uniViewer.interfaces.DDSFile;
+import uniViewer.interfaces.SpriteSource;
+import uniViewer.interfaces.UnielCharacter;
+import uniViewer.model.UkArc;
+import uniViewer.model.UnielCharacterImpl;
+import uniViewer.util.DDSHelper;
+import uniViewer.util.GzipHelper;
+import uniViewer.util.UnielDecrypt;
 
 public class UnielSpriteLoader implements SpriteSource {
 	String magic = "BMP Cutter3";
@@ -341,6 +351,37 @@ public class UnielSpriteLoader implements SpriteSource {
 		return canvas;
 	}
 	
+	/*public byte[] makeSprite(UkArc data, final TiledSprite tiledSprite) {
+        int destWidth = tiledSprite.data[1];
+        int destHeight = tiledSprite.data[2];
+        
+        int xDisplace = tiledSprite.data[4];
+        int yDisplace = tiledSprite.data[5];
+        
+        int realWidth = tiledSprite.data[6] - tiledSprite.data[4];
+        int realHeight = tiledSprite.data[7] - tiledSprite.data[5];
+        
+        DDSFile sheet = DDSHelper.parse(GzipHelper.inflate(data.getFile(tiledSprite.name+".gz")));
+        //System.out.println("Source Sheet Dim = "+sheet.getWidth()+"x"+sheet.getHeight());
+        
+        byte[] canvas = new byte[destWidth * destHeight];
+        //System.out.println("Allocation = "+destWidth+"x"+destHeight);
+        //System.out.println("Destination Dim = "+realWidth+"x"+realHeight);
+        //System.out.println("Displacement = "+xDisplace+","+yDisplace);
+        for(SpriteTile tile: tiledSprite.tiles) {
+        		//System.out.println("Current Tile - "+tile.srcX+", "+tile.srcY);
+        		//System.out.println("Current Tile Dim - "+tile.width+"x"+tile.height);
+        		//System.out.println("Current Tile Dest - "+tile.dstX+", "+tile.dstY);
+            for(int y = 0;y < tile.height;y++) {
+                if((tile.dstY + y) >= destHeight)
+                    break;
+                System.arraycopy(sheet.getData(), tile.srcX + (tile.srcY + y)*sheet.getWidth(), canvas, tile.dstX + (tile.dstY + y)*destWidth, tile.width);
+            }
+        }
+        
+		return canvas;
+	}*/
+	
 	public byte[] makeSprite(ByteBuffer data, final TiledSprite tiledSprite) {
         int destWidth = tiledSprite.data[1];
         int destHeight = tiledSprite.data[2];
@@ -378,12 +419,26 @@ public class UnielSpriteLoader implements SpriteSource {
 		int realWidth = tiledSprite.data[6] - tiledSprite.data[4];
         int realHeight = tiledSprite.data[7] - tiledSprite.data[5];
         
-		//DataBuffer db = sprites.get(index);
-		//WritableRaster wraster = Raster.createWritableRaster(palettes[selectedPalette].createCompatibleSampleModel(realWidth,realHeight), db, null);
-		//return new BufferedImage(palettes[selectedPalette], wraster, false, null);
+        if(realWidth <= 0 || realHeight <= 0)
+        		return null;
         WritableImage img = new WritableImage(realWidth, realHeight);
         img.getPixelWriter().setPixels(0, 0, realWidth, realHeight, PixelFormat.createByteIndexedInstance(palettes[selectedPalette]), sprites.get(index), 0, realWidth);
         return img;
+	}
+	
+	public BufferedImage getIndexedSprite(int index) {
+		TiledSprite tiledSprite = spriteMetaData.get(index);
+		int destWidth = tiledSprite.data[1];
+        int destHeight = tiledSprite.data[2];
+		int realWidth = tiledSprite.data[6] - tiledSprite.data[4];
+        int realHeight = tiledSprite.data[7] - tiledSprite.data[5];
+        
+        if(destWidth <= 0 || destHeight <= 0)
+        		return null;
+		DataBuffer db = new DataBufferByte(sprites.get(index), destWidth*destHeight);
+		IndexColorModel icm = new IndexColorModel(8,256,palettes[selectedPalette],0,true,0, DataBuffer.TYPE_BYTE);
+		WritableRaster wraster = Raster.createWritableRaster(icm.createCompatibleSampleModel(destWidth,destHeight), db, null);
+		return new BufferedImage(icm, wraster, false, null);
 	}
 	
 	public int[] getAxisCorrection(int index) {

@@ -1,3 +1,6 @@
+package uniViewer.util;
+import uniViewer.interfaces.DDSFile;
+
 public class DDSHelper implements DDSFile {
 	private static final byte[] magic = new byte[] {0x44, 0x44, 0x53, 0x20};
 	private byte[] data;

@@ -1,3 +1,5 @@
+package uniViewer.util;
+import uniViewer.model.Hantei6DataFile;
 
 public class AnimHelper {
 	private AnimHelper(){}

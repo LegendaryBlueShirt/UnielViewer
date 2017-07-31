@@ -1,3 +1,4 @@
+package uniViewer.util;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -5,11 +6,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class UnPac {
-	static class PacFile {
+	public static class PacFile {
 		private static final int HEADER_SIZE = 16;
 		private static final byte[] MAGIC = new byte[] {0x55, 0x4B, 0x41, 0x72, 0x63, 0x00, 0x00, 0x00};
 		private RandomAccessFile raf;
