@@ -74,7 +74,7 @@ public class UnielViewer extends Application {
 		
 		File namesFile = character.getFile(UnielCharacter.ANIM_NAME_OVERRIDE);
 		try {
-			InputStream is = getClass().getResourceAsStream(File.separator+namesFile.getName());
+			InputStream is = getClass().getResourceAsStream("/"+namesFile.getName());
 			byte[] data = new byte[is.available()];
 			is.read(data);
 			is.close();
@@ -352,11 +352,11 @@ public class UnielViewer extends Application {
 		
 		view.prepareForRendering();
 		
-		if(SteamHelper.getUNIELDirectory() != null) {
+		/*if(SteamHelper.getUNIELDirectory() != null) {
 			setAppMode(AppMode.UNIEL_STEAM);
 			unielHome = SteamHelper.getUNIELDirectory();
 			start();
-		}
+		}*/
 		
 		primaryStage.setScene( theScene );
 		primaryStage.show();

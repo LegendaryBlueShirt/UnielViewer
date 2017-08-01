@@ -48,6 +48,7 @@ public class UnPac {
 					raf.read(nameBuffer);
 					String name = new String(nameBuffer).trim();
 					names.put(name, n);
+					System.out.println("Pacfile - "+name);
 					index.put(n, name);
 					sizes[n] = raf.readInt();
 					int unk2 = raf.readInt();
@@ -82,6 +83,9 @@ public class UnPac {
 		public byte[] getFile(String name) throws IOException {
 			if(!valid)
 				return null;
+			System.out.println("Attempting to get "+name);
+			name = name.replace("\\", "/");
+			System.out.println("Slashes replaced - "+name);
 			return getFile(names.get(name));
 		}
 		
