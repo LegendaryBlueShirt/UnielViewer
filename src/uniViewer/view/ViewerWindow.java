@@ -5,6 +5,8 @@ import javafx.event.EventHandler;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.stage.WindowEvent;
 import uniViewer.interfaces.SpriteSource;
@@ -19,13 +21,28 @@ public class ViewerWindow extends Canvas {
 	int currentX = 400;
 	int currentY = 450;
 	
-	public ViewerWindow(int width, int height) {
+	/*public ViewerWindow(int width, int height) {
 		super(width, height);
-	}
+	}*/
 	
 	public void setSpriteSource(SpriteSource source) {
 		this.source = source;
 	}
+	
+	@Override
+    public boolean isResizable() {
+      return true;
+    }
+ 
+    @Override
+    public double prefWidth(double height) {
+      return getWidth();
+    }
+ 
+    @Override
+    public double prefHeight(double width) {
+      return getHeight();
+    }
 	
 	public volatile boolean running = false;
 	Color background = Color.BLACK;
@@ -90,7 +107,7 @@ public class ViewerWindow extends Canvas {
 		if(!frame.AF.mActive)
 			return;
 		synchronized(sequence) {
-		g.translate(currentX, currentY);
+		g.translate(getAxisX(), getAxisY());
 		for(int n = 0; n < 3;n++){
 			g.save();
 			Hantei6DataFile.Gx gx = frame.AF.subSprites[n];
@@ -172,5 +189,58 @@ public class ViewerWindow extends Canvas {
 				//e.getWindow().dispose();
 			}
 			};
+	}
+
+	private int getAxisX() {
+		if(dragging) {
+			return (int)(displaceX - clickOriginX) + currentX;
+		} else {
+			return currentX;
+		}
+	}
+	
+	private int getAxisY() {
+		if(dragging) {
+			return (int)(displaceY - clickOriginY) + currentY;
+		} else {
+			return currentY;
+		}
+	}
+	
+	public void resetPosition() {
+		currentX = (int) (getWidth()/2);
+		currentY = (int) (this.getHeight()/2 + 150);
+	}
+	
+	boolean dragging = false;
+	double clickOriginX = 0;
+	double clickOriginY = 0;
+	double displaceX = 0;
+	double displaceY = 0;
+	public void onClick(MouseEvent event) {
+		if(event.getButton() == MouseButton.PRIMARY) {
+			dragging = true;
+			clickOriginX = event.getScreenX();
+			clickOriginY = event.getScreenY();
+			displaceX = clickOriginX;
+			displaceY = clickOriginY;
+		}
+	}
+	
+	public void onDrag(MouseEvent event) {
+		if(dragging) {
+			displaceX = event.getScreenX();
+			displaceY = event.getScreenY();
+		}
+	}
+	
+	public void onRelease(MouseEvent event) {
+		if(dragging) {
+			if(event.getButton() == MouseButton.PRIMARY) {
+				currentX = getAxisX();
+				currentY = getAxisY();
+				dragging = false;
+			}
+		}
 	}
 }

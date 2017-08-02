@@ -83,9 +83,7 @@ public class UnPac {
 		public byte[] getFile(String name) throws IOException {
 			if(!valid)
 				return null;
-			System.out.println("Attempting to get "+name);
 			name = name.replace("\\", "/");
-			System.out.println("Slashes replaced - "+name);
 			return getFile(names.get(name));
 		}
 		

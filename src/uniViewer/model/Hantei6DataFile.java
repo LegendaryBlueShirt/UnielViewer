@@ -142,7 +142,7 @@ public class Hantei6DataFile
 			file.get(tagBuffer);
 
 			switch(new String(tagBuffer)) {
-				case "PTCN":
+				case "PTCN": //
 					//Unknown string specification
 					strLen = readInt(file);
 					file.get(new byte[strLen]); //Skip these bytes

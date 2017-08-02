@@ -22,8 +22,10 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import uniViewer.interfaces.SpriteSource;
@@ -198,13 +200,15 @@ public class UnielViewer extends Application {
 		
 		Menu fileMenu = new Menu("File");
 		MenuItem loadDirectory = new MenuItem("Load Directory");
-		loadDirectory.setOnAction(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event) {
-				showDirectoryChooser();
-			}});
+		loadDirectory.setOnAction(event -> showDirectoryChooser());
 		fileMenu.getItems().add(loadDirectory);
-		menu.getMenus().add(fileMenu);
+		
+		Menu viewMenu = new Menu("View");
+		MenuItem resetPosition = new MenuItem("Reset Position");
+		resetPosition.setOnAction(event -> view.resetPosition());
+		viewMenu.getItems().add(resetPosition);
+		
+		menu.getMenus().addAll(fileMenu, viewMenu);
 		
 		characterSelect = new ComboBox<UnielCharacter>();
 		characterSelect.valueProperty().addListener(new ChangeListener<UnielCharacter>() {
@@ -326,7 +330,7 @@ public class UnielViewer extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		view = new ViewerWindow(800, 600);
+		view = new ViewerWindow();
 		primaryStage.setOnCloseRequest(view.getWindowCloseHandler());
 		primaryStage.setTitle("Under Night Framedisplay");
 		
@@ -346,8 +350,19 @@ public class UnielViewer extends Application {
 		topMenu.getChildren().addAll(characterSelect,sequenceSelect);
 		// setup our canvas size and put it into the content of the frame
 		border.setTop(topMenu);
-		border.setCenter(view);
 		
+		Pane pane = new Pane();
+		border.setCenter(pane);
+		
+		pane.getChildren().add(view);
+		
+		view.widthProperty().bind(primaryStage.widthProperty());
+	    view.heightProperty().bind(primaryStage.heightProperty().subtract(topMenu.heightProperty()));
+		
+	    theScene.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> view.onClick(event));
+	    theScene.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> view.onDrag(event));
+	    theScene.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> view.onRelease(event));
+	    
 		((VBox)theScene.getRoot()).getChildren().addAll(menu, border);
 		
 		view.prepareForRendering();
