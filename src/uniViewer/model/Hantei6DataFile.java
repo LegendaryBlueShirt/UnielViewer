@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Locale;
 
+import static uniViewer.model.Hantei6Tags.*;
+
 public class Hantei6DataFile
 {
 	private static final String identifier = "Hantei6DataFile";
@@ -13,10 +15,10 @@ public class Hantei6DataFile
 		Hitbox is 4x shorts */
 		
 	public static class FrameAf {
+		public HashMap<String, Integer[]> flags = new HashMap<String, Integer[]>();
 		public Gx[] subSprites = new Gx[3];
 		public boolean mActive;
-		public int mFrame, mFrameUnk, mDuration, mAff, mBlendMode, mColor;
-
+		//public int mFrame, mFrameUnk, mDuration, mAff, mBlendMode, mColor;
 	}
 	
 	public static class Gx {
@@ -187,7 +189,10 @@ public class Hantei6DataFile
 						Frame newFrame = new Frame();
 						sequence.frames[currentFrame++] = newFrame;
 						loadFrame(file, info, newFrame);
-						sequence.nSubframes += newFrame.AF.mDuration;
+						if(newFrame.AF.flags.get(DURATION) == null) {
+							newFrame.AF.flags.put(DURATION, new Integer[] {0});
+						}
+						sequence.nSubframes += newFrame.AF.flags.get(DURATION)[0];
 					}
 					break;
 				case "PEND": //End
@@ -400,20 +405,20 @@ public class Hantei6DataFile
 	int currentGx, currentOffx, currentOffy;
 	public void loadFrameAf(ByteBuffer file, FrameAf af) throws IOException {
 		af.mActive = true;
-		af.mFrame = -1;
+		/*af.mFrame = -1;
 		af.mFrameUnk = -1;
 		af.mDuration = 1;
 		af.mAff = -1;
 		af.mBlendMode = 0;
-		af.mColor = -1;
+		af.mColor = -1;*/
 		currentOffx = 0;
 		currentOffy = 0;
-		
+		String code = null, previous;
 		while(true) {
 			n=0;
 			file.get(tagBuffer);
-			
-			String code = new String(tagBuffer);
+			previous = code;
+			code = new String(tagBuffer);
 			switch(code) {
 				case "AFGX":
 					Gx subSprite = new Gx();
@@ -427,12 +432,11 @@ public class Hantei6DataFile
 					break;
 				case "AFPA":
 				case "AFLP":
-				case "AFCT":
-					readInt(file); //Unknown to me
+				case "AFCT": //Loop count
+					readInt(file);
 					break;
-				case "AFGP":
-					af.mFrameUnk = readInt(file);
-					af.mFrame = readInt(file);
+				case FRAME: //Unk = [0]   //Frame = [1]
+					af.flags.put(FRAME, new Integer[] {readInt(file), readInt(file)});
 					break;
 				case "AFOF":
 					currentOffx = readInt(file);
@@ -440,13 +444,21 @@ public class Hantei6DataFile
 					af.subSprites[currentGx].mOffsetX = currentOffx;
 					af.subSprites[currentGx].mOffsetY = currentOffy;
 					break;
-				case "AFAL":
-					af.mBlendMode = readInt(file);//Used to be one byte.
-					af.mColor = (af.mColor&0xFFFFFF) | (readInt(file)); //This is the alpha component, also used to be one byte <<24
+				case ALPHA:
+					af.flags.put(ALPHA, new Integer[] {readInt(file)});
+					int value = 0;
+					if(af.flags.get(RGB) != null) {
+						value = af.flags.get(RGB)[0];
+					}
+					value = (value&0xFFFFFF) | (readInt(file));
+					af.flags.put(RGB, new Integer[] {value});
 					break;
-				case "AFRG":
+				case RGB:
 					int color = (readInt(file)<<16)|(readInt(file)<<8)|readInt(file); //Used to be three bytes
-					af.mColor = (af.mColor&0xFF000000) | color;
+					if(af.flags.get(RGB) != null) {
+						color = (af.flags.get(RGB)[0]&0xFF000000) | color;
+					}
+					af.flags.put(RGB, new Integer[] {color});
 					break;
 				case "AFAZ":
 					af.subSprites[currentGx].mRotZ = readFloat(file);
@@ -467,19 +479,29 @@ public class Hantei6DataFile
 				case "AFPL":
 					readInt(file); //Palette shenanigans?
 					break;
+				case "AFFL":
 				case "AFHK":
 				case "AFPR":
 				case "AFID":
+				case "AFFX":
+				case "AFJH":
+				case "AFJP": //Frame jump
+				case "AFFE": //Affects AFJP
+				case "AFJC": //Jump cancel frame jump
                 case "AFRT": //Unknown
-					readInt(file);
+                		af.flags.put(code, new Integer[] {readInt(file)});
 					break;
+                case "AFF1":
+                case "AFF2": //
+                		af.flags.put(code, null);
+                		break;
 				default: //We need to check for 3 letter codes
 					byte t = tagBuffer[3];
-					if(code.startsWith("AFD")) {
+					if(code.startsWith(DURATION)) {
 						if((t >= '0') && (t <= '9')) {
-							af.mDuration = t - '0';
+							af.flags.put(DURATION, new Integer[] {t - '0'});
 						} else if(t == 'L') {
-							af.mDuration = readInt(file);
+							af.flags.put(DURATION, new Integer[] {readInt(file)});
 						}
 					} else if(code.startsWith("AFY")){
 						if((t >= '0') && (t <= '9')) {
@@ -490,18 +512,9 @@ public class Hantei6DataFile
 						} else if(t== 'X'){
 							af.subSprites[currentGx].mOffsetY = 10;
 						}
-					} else if(code.startsWith("AFF")){
-						if((t >= '0') && (t <= '9')) {
-							af.mAff = t - '0';
-						} else if(t== 'X'){
-							af.mAff = readInt(file);
-						} else {
-							readInt(file);//Unknown
-						}
-					} else if(code.startsWith("AFJ")){
-						readInt(file); //Unknown
 					} else {
 						System.out.println("Unknown tag "+code+" at "+(file.position()-4));
+						System.out.println("Previous tag was "+previous);
 						if(!code.startsWith("AF"))
 							System.exit(0);
 					}

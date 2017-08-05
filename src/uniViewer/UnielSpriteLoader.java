@@ -8,6 +8,7 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class UnielSpriteLoader implements SpriteSource {
 	int[] offsets;
 	private List<TiledSprite> spriteMetaData;
 	private List<byte[]> sprites;
+	UkArc arc;
 	int[][] palettes;
 	int selectedPalette = 0;
 	int loadType = -1;
@@ -122,7 +124,7 @@ public class UnielSpriteLoader implements SpriteSource {
 		byte[] buffer = new byte[32];
         int[] dataBuffer = new int[8];
         spriteMetaData = new ArrayList<TiledSprite>();
-        sprites = new ArrayList<byte[]>();
+        //sprites = new ArrayList<byte[]>();
         for(int n = 0;n < nSprites;n++) {
             data.position(offsets[n]);
             data.get(buffer);
@@ -222,11 +224,23 @@ public class UnielSpriteLoader implements SpriteSource {
 			System.err.println("LoadSheets called erroneously!");
 			return;
 		}
-		UkArc arc = new UkArc(data);
+		arc = new UkArc(data);
 		
-		for(TiledSprite spriteData: spriteMetaData) {
-			sprites.add(makeSprite(arc, spriteData));
+		//for(TiledSprite spriteData: spriteMetaData) {
+		//	sprites.add(makeSprite(arc, spriteData));
+		//}
+	}
+	
+	public void loadSheets(RandomAccessFile raf) {
+		if(!needsCgarc) {
+			System.err.println("LoadSheets called erroneously!");
+			return;
 		}
+		arc = new UkArc(raf);
+		
+		//for(TiledSprite spriteData: spriteMetaData) {
+		//	sprites.add(makeSprite(arc, spriteData));
+		//}
 	}
 	
 	public void loadPalettes(ByteBuffer data) {
@@ -287,7 +301,8 @@ public class UnielSpriteLoader implements SpriteSource {
 	}
 	
 	public int getNumSprites() {
-		return sprites.size();
+		//return sprites.size();
+		return spriteMetaData.size();
 	}
 	
 	public static class TiledSprite {
@@ -330,7 +345,7 @@ public class UnielSpriteLoader implements SpriteSource {
         int realWidth = tiledSprite.data[6] - tiledSprite.data[4];
         int realHeight = tiledSprite.data[7] - tiledSprite.data[5];
         
-        DDSFile sheet = DDSHelper.parse(GzipHelper.inflate(data.getFile(tiledSprite.name+".gz")));
+        DDSFile sheet = GzipHelper.inflateDDS(data.getFile(tiledSprite.name+".gz"));
         //System.out.println("Source Sheet Dim = "+sheet.getWidth()+"x"+sheet.getHeight());
         
         byte[] canvas = new byte[realWidth * realHeight];
@@ -422,7 +437,13 @@ public class UnielSpriteLoader implements SpriteSource {
         if(realWidth <= 0 || realHeight <= 0)
         		return null;
         WritableImage img = new WritableImage(realWidth, realHeight);
-        img.getPixelWriter().setPixels(0, 0, realWidth, realHeight, PixelFormat.createByteIndexedInstance(palettes[selectedPalette]), sprites.get(index), 0, realWidth);
+        byte[] sprData;
+        if(sprites != null) {
+        		sprData = sprites.get(index);
+        } else {
+        		sprData = makeSprite(arc, tiledSprite);
+        }
+        img.getPixelWriter().setPixels(0, 0, realWidth, realHeight, PixelFormat.createByteIndexedInstance(palettes[selectedPalette]), sprData, 0, realWidth);
         return img;
 	}
 	
@@ -435,7 +456,14 @@ public class UnielSpriteLoader implements SpriteSource {
         
         if(destWidth <= 0 || destHeight <= 0)
         		return null;
-		DataBuffer db = new DataBufferByte(sprites.get(index), destWidth*destHeight);
+        
+        byte[] sprData;
+        if(sprites != null) {
+        		sprData = sprites.get(index);
+        } else {
+        		sprData = makeSprite(arc, tiledSprite);
+        }
+		DataBuffer db = new DataBufferByte(sprData, destWidth*destHeight);
 		IndexColorModel icm = new IndexColorModel(8,256,palettes[selectedPalette],0,true,0, DataBuffer.TYPE_BYTE);
 		WritableRaster wraster = Raster.createWritableRaster(icm.createCompatibleSampleModel(destWidth,destHeight), db, null);
 		return new BufferedImage(icm, wraster, false, null);

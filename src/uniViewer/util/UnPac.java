@@ -80,6 +80,23 @@ public class UnPac {
 			return index.get(position);
 		}
 		
+		public int getFileSize(int position) {
+			return sizes[position];
+		}
+		
+		public long getFileOffset(int position) {
+			return offsets[position];
+		}
+		
+		public RandomAccessFile getFileAccess(String name) throws IOException {
+			if(!valid)
+				return null;
+			name = name.replace("\\", "/");
+			int index = names.get(name);
+			raf.seek(offsets[index]);
+			return raf;
+		}
+		
 		public byte[] getFile(String name) throws IOException {
 			if(!valid)
 				return null;

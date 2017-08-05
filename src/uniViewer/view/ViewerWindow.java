@@ -1,5 +1,6 @@
 package uniViewer.view;
 import java.awt.Rectangle;
+import java.util.Arrays;
 
 import javafx.event.EventHandler;
 import javafx.scene.canvas.Canvas;
@@ -12,6 +13,7 @@ import javafx.stage.WindowEvent;
 import uniViewer.interfaces.SpriteSource;
 import uniViewer.model.Hantei6DataFile;
 import uniViewer.util.AnimHelper;
+import static uniViewer.model.Hantei6Tags.*;
 
 public class ViewerWindow extends Canvas {
 	SpriteSource source;
@@ -82,7 +84,7 @@ public class ViewerWindow extends Canvas {
 		if(frame == null)
 			return;
 		g.fillText(String.format("Sequence %d/%d", currentFrame+1, sequence.frames.length), 0, 0);
-		g.fillText(String.format("Frame %d    Duration %d", AnimHelper.getTimeForFrame(sequence, currentFrame), frame.AF.mDuration), 0, 16);
+		g.fillText(String.format("Frame %d    Duration %d", AnimHelper.getTimeForFrame(sequence, currentFrame), frame.AF.flags.get(DURATION)[0]), 0, 16);
 		
 		if(frame.AT != null)
 		if(frame.AT.mActive) {
@@ -91,8 +93,23 @@ public class ViewerWindow extends Canvas {
 			//g.drawString(String.format("Proration %d", frame.AT.mProration), 0, 80);
 			g.fillText(String.format("Circuit Gain %f", frame.AT.mCircuitGain/100.0), 0, 96);
 		}
+		
+		if(frame.AF != null) {
+			if(frame.AF.mActive) {
+				int yoff = 0;
+				for(String flag: frame.AF.flags.keySet()) {
+					if(frame.AF.flags.get(flag) != null) {
+						g.fillText(flag+"  "+Arrays.toString(frame.AF.flags.get(flag)), getWidth()-120, yoff);
+					} else {
+						g.fillText(flag, getWidth()-120, yoff);
+					}
+					yoff+=16;
+				}
+			}
+		}
+		
 		g.restore();
-		//g.dispose();
+
 	}
 	
 	Image[] layers = new Image[3];

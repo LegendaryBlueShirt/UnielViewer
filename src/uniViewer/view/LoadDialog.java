@@ -10,6 +10,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
@@ -38,17 +39,18 @@ public class LoadDialog extends Dialog<ButtonType> {
         close();
     }
     
+    @FXML protected void handleCancelAction(ActionEvent event) {
+    		setResult(ButtonType.CLOSE);
+    		close();
+    }
+    
     DirectoryChooser fileChooser = new DirectoryChooser();
     @FXML protected void showFolderChooser(ActionEvent event) {
 	    	fileChooser.setTitle("Open Resource File");
+	    	fileChooser.setInitialDirectory(new File("."));
 	    File selectedFolder = fileChooser.showDialog(getDialogPane().getScene().getWindow());
-	    File validatedFolder = validateFolder(selectedFolder);
-	    if(validatedFolder == null) {
+	    if(selectedFolder != null) {
 	    		uniHome.setText(selectedFolder.getPath());
-	    		folderOk = false;
-	    } else {
-	    		uniHome.setText(validatedFolder.getPath());
-	    		folderOk = true;
 	    }
     }
     
@@ -73,6 +75,10 @@ public class LoadDialog extends Dialog<ButtonType> {
 			//Parent root = FXMLLoader.load(getClass().getResource("LoadDialog.fxml"));
 			//root.setController(this);
 	        getDialogPane().setContent(root);
+	        getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+            Node closeButton = getDialogPane().lookupButton(ButtonType.CLOSE);
+            closeButton.managedProperty().bind(closeButton.visibleProperty());
+            closeButton.setVisible(false);
 	        
 	        binding = new ObjectBinding<AppMode>() {
 		        	{
@@ -92,14 +98,19 @@ public class LoadDialog extends Dialog<ButtonType> {
 	        binding.addListener(new ChangeListener<AppMode>(){
 				@Override
 				public void changed(ObservableValue<? extends AppMode> observable, AppMode oldValue, AppMode newValue) {
-					File validatedFolder = validateFolder(new File(uniHome.getText()));
-				    if(validatedFolder == null) {
-				    		folderOk = false;
-				    } else {
-				    		uniHome.setText(validatedFolder.getPath());
-				    		folderOk = true;
-				    }
+					uniHome.setText(uniHome.getText());
 				}});;
+			uniHome.textProperty().addListener(new ChangeListener<String>() {
+				@Override
+				public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+					File validatedFolder = validateFolder(new File(newValue));
+					if(validatedFolder == null) {
+						folderOk = false;
+					} else {
+						uniHome.setText(validatedFolder.getPath());
+						folderOk = true;
+					}
+				}});
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

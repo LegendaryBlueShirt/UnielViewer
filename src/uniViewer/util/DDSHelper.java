@@ -16,6 +16,17 @@ public class DDSHelper implements DDSFile {
 		return helper;
 	}
 
+	public void setData(byte[] data) {
+		this.data = data;
+	}
+
+	public void setWidth(int width) {
+		this.width = width;
+	}
+
+	public void setHeight(int height) {
+		this.height = height;
+	}
 
 	@Override
 	public byte[] getData() {

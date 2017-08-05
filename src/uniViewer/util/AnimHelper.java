@@ -1,5 +1,6 @@
 package uniViewer.util;
 import uniViewer.model.Hantei6DataFile;
+import static uniViewer.model.Hantei6Tags.*;
 
 public class AnimHelper {
 	private AnimHelper(){}
@@ -7,7 +8,7 @@ public class AnimHelper {
 	public static int getSequenceDurationTotal(Hantei6DataFile.Sequence sequence) {
 		int total = 0;
 		for(Hantei6DataFile.Frame frame: sequence.frames) {
-			total += frame.AF.mDuration;
+			total += frame.AF.flags.get(DURATION)[0];
 		}
 		return total;
 	}
@@ -15,7 +16,7 @@ public class AnimHelper {
 	public static int getTimeForFrame(Hantei6DataFile.Sequence sequence, int frame) {
 		int time = 0;
 		for(int n = 0;n < frame;n++) {
-			time += sequence.frames[n].AF.mDuration;
+			time += sequence.frames[n].AF.flags.get(DURATION)[0];
 		}
 		return time;
 	}
@@ -25,7 +26,7 @@ public class AnimHelper {
 		int frameNum = -1;
 		for(Hantei6DataFile.Frame frame: sequence.frames) {
 			frameNum++;
-			currentTime -= frame.AF.mDuration;
+			currentTime -= frame.AF.flags.get(DURATION)[0];
 			if(currentTime < 0)
 				break;
 		}

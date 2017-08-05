@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
@@ -22,6 +23,9 @@ public class UkArc {
 	int[] offsets;
 	int[] sizes;
 	ByteBuffer data;
+	
+	RandomAccessFile liveData;
+	long liveOffset;
 	
 	public UkArc(ByteBuffer data) {
 		this.data = data;
@@ -54,6 +58,40 @@ public class UkArc {
 		}
 	}
 	
+	public UkArc(RandomAccessFile raf) {
+		try {
+			liveData = raf;
+			liveOffset = raf.getFilePointer();
+			byte[] header = new byte[8];
+			liveData.read(header);
+			if(!new String(header).contains(magic)) {
+				System.err.println("Unknown format!");
+				System.err.println(new String(header));
+				return;
+			}
+			
+			liveData.skipBytes(4);
+			
+			int nFiles = liveData.readInt();
+			names = new HashMap<String, Integer>();
+			index = new HashMap<Integer, String>();
+			offsets = new int[nFiles];
+			sizes = new int[nFiles];
+			byte[] stringBuffer = new byte[64];
+			for(int n = 0;n < nFiles;n++) {
+				liveData.read(stringBuffer);
+				String name = new String(stringBuffer).trim();
+				names.put(name, n);
+				index.put(n, name);
+				sizes[n] = liveData.readInt();
+				liveData.skipBytes(4);
+				offsets[n] = liveData.readInt()+ HEADER_SIZE;
+			}
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public int getNumFiles() {
 		return names.size();
 	}
@@ -67,10 +105,24 @@ public class UkArc {
 	}
 	
 	public byte[] getFile(int index) {
-		data.position(offsets[index]);
-		byte[] output = new byte[sizes[index]];
-		data.get(output);
-		return output;
+		if(data != null) {
+			data.position(offsets[index]);
+			byte[] output = new byte[sizes[index]];
+			data.get(output);
+			return output;
+		} else if(liveData != null) {
+			try {
+				liveData.seek(liveOffset + offsets[index]);
+				byte[] output = new byte[sizes[index]];
+				liveData.read(output);
+				return output;
+			} catch(IOException e) {
+				e.printStackTrace();
+				return null;
+			}
+		} else {
+			return null;
+		}
 	}
 	
 	public static void main(String args[])throws IOException {

@@ -121,7 +121,7 @@ public class UnielViewer extends Application {
 		UnPac.PacFile pacFile = new UnPac.PacFile(packFile);
 		UnielSpriteLoader spriteLoader = new UnielSpriteLoader(ByteBuffer.wrap(pacFile.getFile(character.getFile(UnielCharacter.FILE_SPRITES).getPath())));
 		if(spriteLoader.needsCgarc) {
-			spriteLoader.loadSheets(ByteBuffer.wrap(pacFile.getFile(character.getFile(UnielCharacter.FILE_SPRITES_CG).getPath())));
+			spriteLoader.loadSheets(pacFile.getFileAccess(character.getFile(UnielCharacter.FILE_SPRITES_CG).getPath()));
 		}
 		
 		spriteLoader.loadPalettes(ByteBuffer.wrap(pacFile.getFile(character.getFile(UnielCharacter.FILE_PALETTE).getPath())));
@@ -246,16 +246,6 @@ public class UnielViewer extends Application {
 	
 	static LoadDialog loadDialog;
 	private void showDirectoryChooser() {
-		/*unielHome = new File("/Users/franciscopareja/Downloads/UNIST/USRDIR/");
-		try {
-			start();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
 		if(loadDialog == null) {
 			loadDialog = new LoadDialog();
 		}
