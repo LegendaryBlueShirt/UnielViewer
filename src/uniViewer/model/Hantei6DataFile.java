@@ -430,11 +430,6 @@ public class Hantei6DataFile
 					subSprite.mOffsetX = currentOffx;
 					subSprite.mOffsetY = currentOffy;
 					break;
-				case "AFPA":
-				case "AFLP":
-				case "AFCT": //Loop count
-					readInt(file);
-					break;
 				case FRAME: //Unk = [0]   //Frame = [1]
 					af.flags.put(FRAME, new Integer[] {readInt(file), readInt(file)});
 					break;
@@ -476,9 +471,10 @@ public class Hantei6DataFile
 					break;
 				case "AFED":
 					return;
-				case "AFPL":
-					readInt(file); //Palette shenanigans?
-					break;
+				case "AFPL": //Palette shenanigans?
+				case "AFPA":
+				case "AFLP":
+				case "AFCT": //Loop count
 				case "AFFL":
 				case "AFHK":
 				case "AFPR":
