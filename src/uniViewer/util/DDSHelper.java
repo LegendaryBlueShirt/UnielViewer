@@ -1,4 +1,18 @@
 package uniViewer.util;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferInt;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import javax.imageio.ImageIO;
+
 import uniViewer.interfaces.DDSFile;
 
 public class DDSHelper implements DDSFile {
@@ -42,5 +56,30 @@ public class DDSHelper implements DDSFile {
 	@Override
 	public int getHeight() {
 		return height;
+	}
+	
+	public static void main(String args[])throws IOException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		String path = br.readLine();
+		File inputFile = new File(path);
+		FileInputStream fis = new FileInputStream(inputFile);
+		byte[] data = new byte[fis.available()];
+		fis.read(data);
+		fis.close();
+		
+		File outputFile = new File(inputFile.getParentFile(), "output.png");
+		
+		DDSFile helper = DDSHelper.parse(data);
+		byte[] rawData = helper.getData();
+		int[] pixelData = new int[helper.getWidth() * helper.getHeight()];
+		for(int m = 0;m < (rawData.length/4);m++) {
+	        	if(rawData[m*4+3] != 0)
+	        		rawData[m*4+3] = (byte) 0xFF;
+	        	pixelData[m] = ((rawData[m*4+3]&0xFF) << 24) | ((rawData[m*4]&0xFF) << 16) | ((rawData[m*4+1]&0xFF) << 8) | (rawData[m*4+2]&0xFF);
+	    }
+		DataBuffer db = new DataBufferInt(pixelData, helper.getWidth()*helper.getHeight());
+		WritableRaster wraster = Raster.createWritableRaster(ColorModel.getRGBdefault().createCompatibleSampleModel(helper.getWidth(), helper.getHeight()), db, null);
+		BufferedImage myImage = new BufferedImage(ColorModel.getRGBdefault(), wraster, false, null);
+		ImageIO.write(myImage, "png", outputFile);
 	}
 }
