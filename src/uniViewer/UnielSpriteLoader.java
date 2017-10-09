@@ -165,7 +165,9 @@ public class UnielSpriteLoader implements SpriteSource {
             data.get(paldata);
             
             for(int m = 0;m < 256;m++) {
-	            	if(paldata[m*4+3] != 0)
+            		if(m == 0) {
+            			paldata[m*4+3] = 0;
+            		} else if(paldata[m*4+3] != 0)
 	            		paldata[m*4+3] = (byte) 0xFF;
 	            	palettes[n][m] = ((paldata[m*4+3]&0xFF) << 24) | ((paldata[m*4]&0xFF) << 16) | ((paldata[m*4+1]&0xFF) << 8) | (paldata[m*4+2]&0xFF);
             }
@@ -293,6 +295,9 @@ public class UnielSpriteLoader implements SpriteSource {
             for(int m = 0;m < 256;m++) {
             		if(paldata[m*4+3] != 0)
             			paldata[m*4+3] = (byte) 0xFF;
+            		if(m == 0) {
+            			paldata[m*4+3] = 0;
+            		}
             		palettes[n][m] = ((paldata[m*4+3]&0xFF) << 24) | ((paldata[m*4]&0xFF) << 16) | ((paldata[m*4+1]&0xFF) << 8) | (paldata[m*4+2]&0xFF);
             }
             

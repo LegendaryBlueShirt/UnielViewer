@@ -170,28 +170,32 @@ public class ViewerWindow extends Canvas {
 		}
 		}
 		g.setStroke(new Color(1,1,1,.80));
-		Rectangle box = frame.mHitboxes[0];
-		if(box != null) {
+		Integer boxnum = frame.mHitboxes[0];
+		if(boxnum != null) {
+			Rectangle box = sequence.hitboxes[boxnum];
 			g.strokeRect(box.x, box.y, box.width, box.height);
 		}
 		g.setStroke(new Color(0,0,1,.80));
 		for(int n = 1;n < 9;n++){
-			box = frame.mHitboxes[n];
-			if(box != null) {
+			boxnum = frame.mHitboxes[n];
+			if(boxnum != null) {
+				Rectangle box = sequence.hitboxes[boxnum];
 				g.strokeRect(box.x, box.y, box.width, box.height);
 			}
 		}
 		g.setStroke(new Color(0,1,0,.80));
 		for(int n = 9;n < 25;n++){
-			box = frame.mHitboxes[n];
-			if(box != null) {
+			boxnum = frame.mHitboxes[n];
+			if(boxnum != null) {
+				Rectangle box = sequence.hitboxes[boxnum];
 				g.strokeRect(box.x, box.y, box.width, box.height);
 			}
 		}
 		g.setStroke(new Color(1,0,0,.80));
 		for(int n = 25;n < 33;n++){
-			box = frame.mHitboxes[n];
-			if(box != null) {
+			boxnum = frame.mHitboxes[n];
+			if(boxnum != null) {
+				Rectangle box = sequence.hitboxes[boxnum];
 				g.strokeRect(box.x, box.y, box.width, box.height);
 			}
 		}

@@ -10,7 +10,6 @@ import static uniViewer.model.Hantei6Tags.*;
 public class Hantei6DataFile
 {
 	private static final String identifier = "Hantei6DataFile";
-	
 	/*
 		Hitbox is 4x shorts */
 		
@@ -53,7 +52,7 @@ public class Hantei6DataFile
 		public FrameAt AT;
 		public FrameEf EF;
 		public FrameIf IF;
-		public Rectangle[] mHitboxes = new Rectangle[33];
+		public Integer[] mHitboxes = new Integer[33];
 	}
 	
 	public static class Sequence {
@@ -219,8 +218,9 @@ public class Hantei6DataFile
 						int boxY = readInt(file);
 						int boxWidth = readInt(file)-boxX;
 						int boxHeight = readInt(file)-boxY;
-						frame.mHitboxes[n] = new Rectangle(boxX,boxY,boxWidth,boxHeight);
-						info.seq.hitboxes[info.cur_hitbox++]=frame.mHitboxes[n];
+						info.seq.hitboxes[info.cur_hitbox]=new Rectangle(boxX,boxY,boxWidth,boxHeight);
+						frame.mHitboxes[n] = info.cur_hitbox;
+						info.cur_hitbox++;
 					} else {
 						file.get(new byte[32]);
 					}
@@ -230,8 +230,8 @@ public class Hantei6DataFile
 				case "HRNS":
 					n+= readInt(file);
 					int source = readInt(file);
-					if(n <= 32 && source < info.cur_hitbox) {
-						frame.mHitboxes[n] = info.seq.hitboxes[source];
+					if(n <= 32) {
+						frame.mHitboxes[n] = source;
 					}
 					break;
 				case "ATST": //Start Attack Block
